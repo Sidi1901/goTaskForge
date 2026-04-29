@@ -4,6 +4,8 @@ import (
 	"Sidi1901/goTaskForge/api/internal/config"
 	"Sidi1901/goTaskForge/api/internal/database"
 	"Sidi1901/goTaskForge/api/internal/handler"
+	"Sidi1901/goTaskForge/api/internal/queue"
+	"Sidi1901/goTaskForge/api/internal/repository"
 	"Sidi1901/goTaskForge/api/internal/route"
 	"Sidi1901/goTaskForge/api/internal/service"
 
@@ -17,9 +19,11 @@ func main() {
 	cfg := config.LoadConfig()
 
 	database.ConnectDB(cfg)
+	queue.ConnectQueue(cfg.RedisAddr, cfg.RedisPassword, cfg.RedisDB)
 
 	// Initialize services
-	taskSvc := service.NewTaskService(database.DB)
+	taskRepo := repository.NewTaskRepository(database.DB)
+	taskSvc := service.NewTaskService(taskRepo)
 
 	// Initialise Handlers
 	taskHandler := handler.NewHandlerTask(taskSvc)

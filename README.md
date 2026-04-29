@@ -2,6 +2,11 @@
 
 A distributed task queue and processing system built with Go. goTaskForge provides a REST API for submitting and tracking asynchronous tasks, backed by PostgreSQL for persistence and Redis for messaging, with a separate worker service for background task processing.
 
+
+## Designs
+DB = source of truth
+Queue = transport only
+
 ## Features
 
 - Submit tasks via REST API and track their lifecycle (`pending` → `in_progress` → `completed` / `failed`)

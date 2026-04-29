@@ -1,5 +1,6 @@
 package dto
 
 type CreateTaskRequest struct {
-	Payload string `json:"payload"`
+	Type string      `json:"type" binding:"required"`
+	Data interface{} `json:"data"`
 }

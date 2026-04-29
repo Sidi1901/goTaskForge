@@ -11,6 +11,6 @@ func SetupRoutes(r *gin.Engine, taskHandler handler.Handler) {
 	api := r.Group("/api/v1")
 	{
 		api.POST("/tasks", taskHandler.CreateTask)
-		api.GET("/tasks/:id", taskHandler.GetTask)
+		api.GET("/tasks/:id", taskHandler.GetTaskStatus)
 	}
 }

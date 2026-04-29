@@ -1,46 +1,55 @@
 package service
 
 import (
+	"context"
+	"encoding/json"
+
 	"Sidi1901/goTaskForge/api/internal/dto"
+	"Sidi1901/goTaskForge/api/internal/queue"
+	"Sidi1901/goTaskForge/api/internal/repository"
 	"Sidi1901/goTaskForge/shared/model"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type TaskService interface {
-	CreateTask(req dto.CreateTaskRequest) (*model.Task, error)
-	GetTask(id string) (*model.Task, error)
+	CreateTask(ctx context.Context, req dto.CreateTaskRequest) (string, error)
+	GetTaskStatus(ctx context.Context, id string) (string, error)
 }
 
 type taskService struct {
-	db *gorm.DB
+	repo repository.TaskRepository
 }
 
-func NewTaskService(db *gorm.DB) TaskService {
-	return &taskService{db: db}
+func NewTaskService(repo repository.TaskRepository) TaskService {
+	return &taskService{repo: repo}
 }
 
-func (s *taskService) CreateTask(req dto.CreateTaskRequest) (*model.Task, error) {
+func (s *taskService) CreateTask(ctx context.Context, req dto.CreateTaskRequest) (string, error) {
+	payloadBytes, _ := json.Marshal(req.Data)
+
 	task := &model.Task{
 		ID:         uuid.New().String(),
 		Status:     model.StatusPending,
-		Payload:    req.Payload,
+		Payload:    string(payloadBytes),
 		RetryCount: 0,
 	}
 
-	if err := s.db.Create(task).Error; err != nil {
-		return nil, err
+	if err := s.repo.CreateTask(task); err != nil {
+		return "", err
 	}
 
-	return task, nil
+	if err := queue.EnqueueTask(ctx, task.ID); err != nil {
+		return "", err
+	}
+
+	return task.ID, nil
 }
 
-func (s *taskService) GetTask(id string) (*model.Task, error) {
-	var task model.Task
-	if err := s.db.First(&task, "id = ?", id).Error; err != nil {
-		return nil, err
+func (s *taskService) GetTaskStatus(ctx context.Context, id string) (string, error) {
+	task, err := s.repo.GetTaskByID(id)
+	if err != nil {
+		return "", err
 	}
-
-	return &task, nil
+	return task.Status, nil
 }
